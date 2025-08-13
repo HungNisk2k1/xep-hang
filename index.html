@@ -70,7 +70,7 @@ const questions = ["Giải : Trình Diễn Ấn Tượng Nhất", "Giải : Tran
 
 let charts = [];
 let questionHeaders = [];
-let lastDataHash = '';
+let lastRowCount = 0;
 let isFetching = false;
 
 questions.forEach((q, idx) => {
@@ -152,9 +152,10 @@ async function fetchAndUpdateCharts() {
         const result = Papa.parse(text, { header: true, skipEmptyLines: true });
         const rows = result.data;
 
-        const dataHash = JSON.stringify(rows);
-        if (dataHash === lastDataHash) { isFetching = false; return; } // Chỉ cập nhật khi có dữ liệu mới
-        lastDataHash = dataHash;
+        if (rows.length <= lastRowCount) { isFetching = false; return; } // Chỉ load khi có dữ liệu mới
+
+        const newRows = rows.slice(lastRowCount); // Lấy các dòng mới
+        lastRowCount = rows.length;
 
         if (rows.length > 0) {
             const allHeaders = Object.keys(rows[0]);
@@ -166,7 +167,7 @@ async function fetchAndUpdateCharts() {
             const header = questionHeaders[questionIndex];
             if (!header) return;
 
-            rows.forEach(row => {
+            newRows.forEach(row => {
                 const answer = row[header]?.trim();
                 if (answer) {
                     const playerIndex = playerNames.findIndex(p => p === answer);
@@ -174,10 +175,11 @@ async function fetchAndUpdateCharts() {
                 }
             });
 
-            animateData(chart, counts);
+            const updatedData = chart.data.datasets[0].data.map((v, i) => v + counts[i]);
+            animateData(chart, updatedData);
 
-            let maxVotes = Math.max(...counts);
-            let leaders = counts.map((v, i) => v === maxVotes && v > 0 ? playerNames[i] : null).filter(v => v);
+            let maxVotes = Math.max(...updatedData);
+            let leaders = updatedData.map((v, i) => v === maxVotes && v > 0 ? playerNames[i] : null).filter(v => v);
             leaderDiv.innerText = maxVotes > 0 ? `🏆 Dẫn đầu: ${leaders.join(", ")} (${maxVotes} phiếu)` : "Chưa có bình chọn nào";
         });
 
