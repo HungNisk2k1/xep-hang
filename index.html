@@ -163,7 +163,7 @@ async function fetchAndUpdateCharts() {
 
         if (questionHeaders.length === 0 && rows.length > 0) {
             const allHeaders = Object.keys(rows[0]);
-            questionHeaders = allHeaders.slice(2, 2 + questions.length);
+            questionHeaders = allHeaders.slice(3, 3 + questions.length);
         }
 
         charts.forEach(({ chart, leaderDiv, questionIndex }) => {
