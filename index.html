@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4 Bảng Xếp Hạng Bình Chọn</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <style>
+        body { font-family: SVN-CERA, sans-serif; text-align: center; margin: 20px; background-color: #6a3b1b; color:#c18836 ; }
+         *{
+  outline: none !important; /* Ẩn viền focus */
+  caret-color: transparent; /* Ẩn dấu nháy */
+}
+        .leader { font-weight: bold; font-size: 22px; margin-bottom: 15px; }
+        .chart-container { width: 800px; margin: 120px auto; }
+        canvas { width: 100% !important; height: 100% !important; color: white;}
+        h3 { font-size: 24px; font-weight: 600; margin-bottom: 10px; }
+        button { padding: 12px 25px; background: #a69480; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #c18836; }
+        #qrPopup {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            border: 2px solid #a69480;
+            padding: 20px;
+            z-index: 999;
+            border-radius: 10px;
+        }
+        #qrPopup button { margin-top: 10px; }
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 998;
+        }
+    </style>
+</head>
+<body>
+    <img style="width: 300px" src="./logo-masteri-lumiere.png"/>
+    <h2>📊 Bảng Xếp Hạng Bình Chọn</h2>
+    <button id="voteBtn" style="font-weight: bold;">🗳️ Bình Chọn Ngay</button>
+
+    <div id="charts"></div>
+
+    <!-- QR code popup -->
+    <div id="overlay"></div>
+    <div id="qrPopup">
+        <div id="qrcode"></div>
+        <button onclick="closeQR()">Đóng</button>
+    </div>
+
+<script>
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS_eMdANgVcuAljpdh-AZ8id8MwqL3gE5qk7LU-YW0NrcDeRkg3qq6UB0uNOfGI6jGc2sgbDrhefi61/pub?output=csv";
+const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdwkOPcgkNrNsiDR0icNtg8YCff_e3lyk-0AGY_zQzOIlveEg/viewform";
+const playerNames = ["Duy Kiên", "Tuấn Cường", "Thu Miền", "Giang Đào", "Đại Hùng", "Trọng Hiếu"];
+const playerColors = ["#e74c3c", "#3498db", "#2ecc71", "#f1c40f", "#9b59b6", "#e67e22"];
+let isFetching = false;
+
+const questions = ["Giải : Trình Diễn Ấn Tượng Nhất", "Giải : Trang Phục Thu Hút Nhất", "Giải : Khán Giả Yêu Thích Nhất", "Giải : Tiết Mục Giải Trí Nhất"];
+const charts = [];
+let questionHeaders = []; // sẽ lưu header cột tương ứng từng câu hỏi
+
+// Tạo biểu đồ
+questions.forEach((q, idx) => {
+    const container = document.createElement('div');
+    container.classList.add('chart-container');
+
+    const title = document.createElement('h3');
+    title.innerText = q;
+    container.appendChild(title);
+
+    const leaderDiv = document.createElement('div');
+    leaderDiv.classList.add('leader');
+    leaderDiv.id = `leader-${idx}`;
+    leaderDiv.innerText = "Đang lấy dữ liệu...";
+    container.appendChild(leaderDiv);
+
+    const canvas = document.createElement('canvas');
+    canvas.id = `chart-${idx}`;
+    container.appendChild(canvas);
+
+    document.getElementById('charts').appendChild(container);
+
+    const ctx = canvas.getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: playerNames,
+            datasets: [{ 
+                label: 'Số phiếu', 
+                data: Array(playerNames.length).fill(0), 
+                backgroundColor: playerColors,
+                barThickness: 50,
+                maxBarThickness: 60
+            }]
+        },
+        options: {
+            responsive: true,
+            animation: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    bodyFont: { size: 16, weight: 'bold' },
+                    titleFont: { size: 18, weight: 'bold' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { 
+                        precision: 0, 
+                        font: { size: 16, weight: 'bold' },
+                        color: '#fff'
+                    }
+                },
+                x: {
+                    ticks: { 
+                        font: { size: 16, weight: 'bold' },
+                        color: '#fff'
+                    },
+                    categoryPercentage: 0.6,
+                    barPercentage: 0.9
+                }
+            }
+        }
+    });
+
+    charts.push({ chart, leaderDiv, questionIndex: idx });
+});
+
+// Hàm fetch và update dữ liệu tự động map header
+async function fetchAndUpdateCharts() {
+    if (isFetching) return;
+    isFetching = true;
+    try {
+        const response = await fetch(SHEET_URL + "&_ts=" + Date.now(), { cache: "no-store" });
+        if (!response.ok) throw new Error('Không thể truy cập dữ liệu. Kiểm tra URL và quyền truy cập công khai.');
+        const text = await response.text();
+
+        // Parse CSV
+        const result = Papa.parse(text, { header: true, skipEmptyLines: true });
+        const rows = result.data;
+
+        // Lấy header tự động (lần đầu)
+        if (questionHeaders.length === 0 && rows.length > 0) {
+            const allHeaders = Object.keys(rows[0]);
+            // Giả sử 4 câu hỏi liên tiếp, map theo thứ tự
+            questionHeaders = allHeaders.slice(3, 3 + questions.length); 
+        }
+
+        charts.forEach(({ chart, leaderDiv, questionIndex }) => {
+            let counts = Array(playerNames.length).fill(0);
+            const header = questionHeaders[questionIndex];
+            if (!header) return;
+
+            rows.forEach(row => {
+                const answer = row[header]?.trim();
+                if (answer) {
+                    const playerIndex = playerNames.findIndex(p => p === answer);
+                    if (playerIndex !== -1) counts[playerIndex]++;
+                }
+            });
+
+            if (JSON.stringify(counts) !== JSON.stringify(chart.data.datasets[0].data)) {
+                chart.data.datasets[0].data = counts;
+                chart.options.scales.y.suggestedMax = Math.max(...counts) + 1;
+                chart.update();
+            }
+
+            let maxVotes = Math.max(...counts);
+            let leaders = counts.map((v, i) => v === maxVotes && v > 0 ? playerNames[i] : null).filter(v => v);
+            leaderDiv.innerText = maxVotes > 0 ? `🏆 Dẫn đầu: ${leaders.join(", ")} (${maxVotes} phiếu)` : "Chưa có bình chọn nào";
+        });
+    } catch (err) {
+        console.error(err);
+        charts.forEach(({ leaderDiv }) => leaderDiv.innerText = "Lỗi tải dữ liệu! Kiểm tra URL và quyền truy cập công khai.");
+    }
+    isFetching = false;
+}
+
+fetchAndUpdateCharts();
+setInterval(fetchAndUpdateCharts, 5000);
+
+// QR code popup
+document.getElementById('voteBtn').addEventListener('click', () => {
+    document.getElementById('overlay').style.display = 'block';
+    const qrContainer = document.getElementById('qrcode');
+    qrContainer.innerHTML = '';
+    new QRCode(qrContainer, {
+        text: FORM_URL,
+        width: 200,
+        height: 200
+    });
+    document.getElementById('qrPopup').style.display = 'block';
+});
+
+function closeQR() {
+    document.getElementById('overlay').style.display = 'none';
+    document.getElementById('qrPopup').style.display = 'none';
+}
+</script>
+</body>
+</html>
