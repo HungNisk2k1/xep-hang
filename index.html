@@ -18,13 +18,10 @@
             flex-direction: column;
             align-items: center;
         }
-        *{
-            outline: none !important;
-            caret-color: transparent;
-        }
+        *{ outline: none !important; caret-color: transparent; }
         .leader { font-weight: bold; font-size: 22px; margin-bottom: 15px; }
-        .chart-container { width: 800px; margin: 120px auto; }
-        canvas { width: 100% !important; height: 100% !important; color: white; }
+        .chart-container { width: 800px; margin: 80px auto; }
+        canvas { width: 100% !important; height: 400px !important; color: white; }
         h3 { font-size: 24px; font-weight: 600; margin-bottom: 10px; }
         button { padding: 12px 25px; background: #a69480; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
         button:hover { background: #c18836; }
@@ -57,7 +54,6 @@
 
     <div id="charts"></div>
 
-    <!-- QR code popup -->
     <div id="overlay"></div>
     <div id="qrPopup">
         <div id="qrcode"></div>
@@ -74,9 +70,9 @@ const questions = ["Giải : Trình Diễn Ấn Tượng Nhất", "Giải : Tran
 
 let charts = [];
 let questionHeaders = [];
+let lastDataHash = '';
 let isFetching = false;
 
-// Tạo biểu đồ
 questions.forEach((q, idx) => {
     const container = document.createElement('div');
     container.classList.add('chart-container');
@@ -112,31 +108,11 @@ questions.forEach((q, idx) => {
         },
         options: {
             responsive: true,
-            animation: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    bodyFont: { size: 16, weight: 'bold' },
-                    titleFont: { size: 18, weight: 'bold' }
-                }
-            },
+            animation: { duration: 500, easing: 'easeOutQuart' },
+            plugins: { legend: { display: false }, tooltip: { bodyFont: { size: 16, weight: 'bold' }, titleFont: { size: 18, weight: 'bold' } } },
             scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { 
-                        precision: 0, 
-                        font: { size: 16, weight: 'bold' },
-                        color: '#fff'
-                    }
-                },
-                x: {
-                    ticks: { 
-                        font: { size: 16, weight: 'bold' },
-                        color: '#fff'
-                    },
-                    categoryPercentage: 0.6,
-                    barPercentage: 0.9
-                }
+                y: { beginAtZero: true, ticks: { precision: 0, font: { size: 16, weight: 'bold' }, color: '#fff' } },
+                x: { ticks: { font: { size: 16, weight: 'bold' }, color: '#fff' }, categoryPercentage: 0.9, barPercentage: 1 }
             }
         }
     });
@@ -144,12 +120,27 @@ questions.forEach((q, idx) => {
     charts.push({ chart, leaderDiv, questionIndex: idx });
 });
 
-// Hàm so sánh mảng
-function arraysEqual(a, b) {
-    return a.length === b.length && a.every((v, i) => v === b[i]);
+function animateData(chart, newData) {
+    const current = chart.data.datasets[0].data.map(v => Number(v));
+    const steps = 20;
+    const stepData = newData.map((v, i) => (v - current[i]) / steps);
+    let count = 0;
+
+    const interval = setInterval(() => {
+        if (count >= steps) {
+            chart.data.datasets[0].data = newData;
+            chart.options.scales.y.suggestedMax = Math.max(...newData, 1) + 1;
+            chart.update();
+            clearInterval(interval);
+            return;
+        }
+        chart.data.datasets[0].data = chart.data.datasets[0].data.map((v, i) => v + stepData[i]);
+        chart.options.scales.y.suggestedMax = Math.max(...chart.data.datasets[0].data, 1) + 1;
+        chart.update();
+        count++;
+    }, 25);
 }
 
-// Fetch dữ liệu và update chart (xóa dữ liệu cũ hoàn toàn)
 async function fetchAndUpdateCharts() {
     if (isFetching) return;
     isFetching = true;
@@ -161,15 +152,17 @@ async function fetchAndUpdateCharts() {
         const result = Papa.parse(text, { header: true, skipEmptyLines: true });
         const rows = result.data;
 
-        if (questionHeaders.length === 0 && rows.length > 0) {
+        const dataHash = JSON.stringify(rows);
+        if (dataHash === lastDataHash) { isFetching = false; return; } // Chỉ cập nhật khi có dữ liệu mới
+        lastDataHash = dataHash;
+
+        if (rows.length > 0) {
             const allHeaders = Object.keys(rows[0]);
-            questionHeaders = allHeaders.slice(3, 3 + questions.length);
+            questionHeaders = [allHeaders[3], allHeaders[4], allHeaders[5], allHeaders[6]];
         }
 
         charts.forEach(({ chart, leaderDiv, questionIndex }) => {
-            // Xóa dữ liệu cũ hoàn toàn
             let counts = Array(playerNames.length).fill(0);
-
             const header = questionHeaders[questionIndex];
             if (!header) return;
 
@@ -181,14 +174,13 @@ async function fetchAndUpdateCharts() {
                 }
             });
 
-            chart.data.datasets[0].data = counts; // update dữ liệu mới
-            chart.options.scales.y.suggestedMax = Math.max(...counts, 1) + 1;
-            chart.update();
+            animateData(chart, counts);
 
             let maxVotes = Math.max(...counts);
             let leaders = counts.map((v, i) => v === maxVotes && v > 0 ? playerNames[i] : null).filter(v => v);
             leaderDiv.innerText = maxVotes > 0 ? `🏆 Dẫn đầu: ${leaders.join(", ")} (${maxVotes} phiếu)` : "Chưa có bình chọn nào";
         });
+
     } catch (err) {
         console.error(err);
         charts.forEach(({ leaderDiv }) => leaderDiv.innerText = "Lỗi tải dữ liệu!");
@@ -196,20 +188,14 @@ async function fetchAndUpdateCharts() {
     isFetching = false;
 }
 
-// Tự động fetch mỗi 5 giây
 fetchAndUpdateCharts();
 setInterval(fetchAndUpdateCharts, 5000);
 
-// QR code popup
 document.getElementById('voteBtn').addEventListener('click', () => {
     document.getElementById('overlay').style.display = 'block';
     const qrContainer = document.getElementById('qrcode');
     qrContainer.innerHTML = '';
-    new QRCode(qrContainer, {
-        text: FORM_URL,
-        width: 200,
-        height: 200
-    });
+    new QRCode(qrContainer, { text: FORM_URL, width: 200, height: 200 });
     document.getElementById('qrPopup').style.display = 'block';
 });
 
