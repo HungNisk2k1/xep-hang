@@ -8,25 +8,26 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <style>
-        body { font-family: SVN-CERA, sans-serif; text-align: center; margin: 20px; background-color: #6a3b1b; color:#c18836 ; 
-        align-items: center;
-      justify-content: center;}
-         *{
-  outline: none !important; /* Ẩn viền focus */
-  caret-color: transparent; /* Ẩn dấu nháy */
-}
-        .leader { font-weight: bold; font-size: 22px; margin-bottom: 15px;align-items: center;
-      justify-content: center; }
-        .chart-container { width: 800px; margin: 120px auto;align-items: center;
-      justify-content: center; }
-        canvas { width: 100% !important; height: 100% !important; color: white;align-items: center;
-      justify-content: center;}
-        h3 { font-size: 24px; font-weight: 600; margin-bottom: 10px;align-items: center;
-      justify-content: center; }
-        button { padding: 12px 25px; background: #a69480; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; align-items: center;
-      justify-content: center;}
-        button:hover { background: #c18836; align-items: center;
-      justify-content: center;}
+        body { 
+            font-family: SVN-CERA, sans-serif; 
+            text-align: center; 
+            margin: 20px; 
+            background-color: #6a3b1b; 
+            color: #c18836; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        *{
+            outline: none !important;
+            caret-color: transparent;
+        }
+        .leader { font-weight: bold; font-size: 22px; margin-bottom: 15px; }
+        .chart-container { width: 800px; margin: 120px auto; }
+        canvas { width: 100% !important; height: 100% !important; color: white; }
+        h3 { font-size: 24px; font-weight: 600; margin-bottom: 10px; }
+        button { padding: 12px 25px; background: #a69480; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #c18836; }
         #qrPopup {
             display: none;
             position: fixed;
@@ -37,11 +38,8 @@
             padding: 20px;
             z-index: 999;
             border-radius: 10px;
-            align-items: center;
-      justify-content: center;
         }
-        #qrPopup button { margin-top: 10px;align-items: center;
-      justify-content: center; }
+        #qrPopup button { margin-top: 10px; }
         #overlay {
             display: none;
             position: fixed;
@@ -49,8 +47,6 @@
             width: 100%; height: 100%;
             background: rgba(0,0,0,0.5);
             z-index: 998;
-            align-items: center;
-      justify-content: center;
         }
     </style>
 </head>
@@ -71,13 +67,14 @@
 <script>
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSe3v0wzyiGRX4OpAsihI14EHTMVlruLmCMpIrOoTtZ3a_WRaWOnEJPtJjGIMDo4dIUnk0jcR6Q752V/pub?output=csv";
 const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdwkOPcgkNrNsiDR0icNtg8YCff_e3lyk-0AGY_zQzOIlveEg/viewform";
+
 const playerNames = ["Duy Kiên", "Tuấn Cường", "Thu Miền", "Giang Đào", "Đại Hùng", "Trọng Hiếu"];
 const playerColors = ["#e74c3c", "#3498db", "#2ecc71", "#f1c40f", "#9b59b6", "#e67e22"];
-let isFetching = false;
-
 const questions = ["Giải : Trình Diễn Ấn Tượng Nhất", "Giải : Trang Phục Thu Hút Nhất", "Giải : Khán Giả Yêu Thích Nhất", "Giải : Tiết Mục Giải Trí Nhất"];
-const charts = [];
-let questionHeaders = []; // sẽ lưu header cột tương ứng từng câu hỏi
+
+let charts = [];
+let questionHeaders = [];
+let isFetching = false;
 
 // Tạo biểu đồ
 questions.forEach((q, idx) => {
@@ -105,9 +102,9 @@ questions.forEach((q, idx) => {
         type: 'bar',
         data: {
             labels: playerNames,
-            datasets: [{ 
-                label: 'Số phiếu', 
-                data: Array(playerNames.length).fill(0), 
+            datasets: [{
+                label: 'Số phiếu',
+                data: Array(playerNames.length).fill(0),
                 backgroundColor: playerColors,
                 barThickness: 50,
                 maxBarThickness: 60
@@ -147,28 +144,32 @@ questions.forEach((q, idx) => {
     charts.push({ chart, leaderDiv, questionIndex: idx });
 });
 
-// Hàm fetch và update dữ liệu tự động map header
+// Hàm so sánh mảng
+function arraysEqual(a, b) {
+    return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
+// Fetch dữ liệu và update chart (xóa dữ liệu cũ hoàn toàn)
 async function fetchAndUpdateCharts() {
     if (isFetching) return;
     isFetching = true;
     try {
         const response = await fetch(SHEET_URL + "&_ts=" + Date.now(), { cache: "no-store" });
-        if (!response.ok) throw new Error('Không thể truy cập dữ liệu. Kiểm tra URL và quyền truy cập công khai.');
-        const text = await response.text();
+        if (!response.ok) throw new Error('Không thể truy cập dữ liệu.');
 
-        // Parse CSV
+        const text = await response.text();
         const result = Papa.parse(text, { header: true, skipEmptyLines: true });
         const rows = result.data;
 
-        // Lấy header tự động (lần đầu)
         if (questionHeaders.length === 0 && rows.length > 0) {
             const allHeaders = Object.keys(rows[0]);
-            // Giả sử 4 câu hỏi liên tiếp, map theo thứ tự
-            questionHeaders = allHeaders.slice(2, 2 + questions.length); 
+            questionHeaders = allHeaders.slice(2, 2 + questions.length);
         }
 
         charts.forEach(({ chart, leaderDiv, questionIndex }) => {
+            // Xóa dữ liệu cũ hoàn toàn
             let counts = Array(playerNames.length).fill(0);
+
             const header = questionHeaders[questionIndex];
             if (!header) return;
 
@@ -180,11 +181,9 @@ async function fetchAndUpdateCharts() {
                 }
             });
 
-            if (JSON.stringify(counts) !== JSON.stringify(chart.data.datasets[0].data)) {
-                chart.data.datasets[0].data = counts;
-                chart.options.scales.y.suggestedMax = Math.max(...counts) + 1;
-                chart.update();
-            }
+            chart.data.datasets[0].data = counts; // update dữ liệu mới
+            chart.options.scales.y.suggestedMax = Math.max(...counts, 1) + 1;
+            chart.update();
 
             let maxVotes = Math.max(...counts);
             let leaders = counts.map((v, i) => v === maxVotes && v > 0 ? playerNames[i] : null).filter(v => v);
@@ -192,13 +191,14 @@ async function fetchAndUpdateCharts() {
         });
     } catch (err) {
         console.error(err);
-        charts.forEach(({ leaderDiv }) => leaderDiv.innerText = "Lỗi tải dữ liệu! Kiểm tra URL và quyền truy cập công khai.");
+        charts.forEach(({ leaderDiv }) => leaderDiv.innerText = "Lỗi tải dữ liệu!");
     }
     isFetching = false;
 }
 
+// Tự động fetch mỗi 5 giây
 fetchAndUpdateCharts();
-setInterval(fetchAndUpdateCharts, 5);
+setInterval(fetchAndUpdateCharts, 5000);
 
 // QR code popup
 document.getElementById('voteBtn').addEventListener('click', () => {
