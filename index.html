@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>4 Bảng Xếp Hạng Bình Chọn</title>
+    <title>Bảng Xếp Hạng Bình Chọn</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <style>
         body { 
-            font-family: SVN-CERA, sans-serif; 
+            font-family: 'Segoe UI', sans-serif; 
             text-align: center; 
             margin: 20px; 
             background-color: #6a3b1b; 
@@ -20,9 +20,9 @@
         }
         *{ outline: none !important; caret-color: transparent; }
         .leader { font-weight: bold; font-size: 22px; margin-bottom: 15px; }
-        .chart-container { width: 800px; margin: 80px auto; }
+        .chart-container { width: 800px; margin-bottom: 150px; }
         canvas { width: 100% !important; height: 400px !important; color: white; }
-        h3 { font-size: 24px; font-weight: 600; margin-bottom: 10px; }
+        h3 { font-size: 30px; font-weight: 800; margin-bottom: 10px; }
         button { padding: 12px 25px; background: #a69480; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
         button:hover { background: #c18836; }
         #qrPopup {
@@ -30,7 +30,7 @@
             position: fixed;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            background: #fff;
+            background: #6a3b1b;
             border: 2px solid #a69480;
             padding: 20px;
             z-index: 999;
@@ -49,7 +49,7 @@
 </head>
 <body>
     <img style="width: 300px;" src="./logo-masteri-lumiere.png"/>
-    <h2>📊 Bảng Xếp Hạng Bình Chọn</h2>
+    <h2>BẢNG XẾP HẠNG BÌNH CHỌN</h2>
     <button id="voteBtn" style="font-weight: bold;">🗳️ Bình Chọn Ngay</button>
 
     <div id="charts"></div>
@@ -57,7 +57,7 @@
     <div id="overlay"></div>
     <div id="qrPopup">
         <div id="qrcode"></div>
-        <button onclick="closeQR()">Đóng</button>
+        <!--<button onclick="closeQR()"></button>-->
     </div>
 
 <script>
@@ -65,8 +65,9 @@ const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSe3v0wzyiGRX
 const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdwkOPcgkNrNsiDR0icNtg8YCff_e3lyk-0AGY_zQzOIlveEg/viewform";
 
 const playerNames = ["Duy Kiên", "Tuấn Cường", "Thu Miền", "Giang Đào", "Đại Hùng", "Trọng Hiếu"];
-const playerColors = ["#e74c3c", "#3498db", "#2ecc71", "#f1c40f", "#9b59b6", "#e67e22"];
-const questions = ["Giải : Trình Diễn Ấn Tượng Nhất", "Giải : Trang Phục Thu Hút Nhất", "Giải : Khán Giả Yêu Thích Nhất", "Giải : Tiết Mục Giải Trí Nhất"];
+const playerColors = ["#c18836"];
+const questionsname = ["Giải Thưởng :"]
+const questions = ["Giải Thưởng : 🏆TRÌNH DIỄN ẤN TƯỢNG NHẤT🏆", "Giải Thưởng : 🏆TRANG PHỤC THU HÚT NHẤT🏆", "Giải Thưởng : 🏆KHÁN GIẢ YÊU THÍCH NHẤT🏆", "Giải Thưởng : 🏆TIẾT MỤC GIẢI TRÍ NHẤT🏆"];
 
 let charts = [];
 let questionHeaders = [];
@@ -180,7 +181,8 @@ async function fetchAndUpdateCharts() {
 
             let maxVotes = Math.max(...updatedData);
             let leaders = updatedData.map((v, i) => v === maxVotes && v > 0 ? playerNames[i] : null).filter(v => v);
-            leaderDiv.innerText = maxVotes > 0 ? `🏆 Dẫn đầu: ${leaders.join(", ")} (${maxVotes} phiếu)` : "Chưa có bình chọn nào";
+            //leaderDiv.innerText = maxVotes > 0 ? `🏆 Dẫn đầu: ${leaders.join(", ")} (${maxVotes} phiếu)` : "Chưa có bình chọn nào";
+             leaderDiv.innerText = maxVotes > 0 ? ` ` : "Chưa có bình chọn nào";
         });
 
     } catch (err) {
@@ -197,8 +199,16 @@ document.getElementById('voteBtn').addEventListener('click', () => {
     document.getElementById('overlay').style.display = 'block';
     const qrContainer = document.getElementById('qrcode');
     qrContainer.innerHTML = '';
-    new QRCode(qrContainer, { text: FORM_URL, width: 200, height: 200 });
+    new QRCode(qrContainer, { text: FORM_URL, width: 600, height: 600 });
     document.getElementById('qrPopup').style.display = 'block';
+});
+
+// Xóa nút "Đóng" hoặc giữ tùy thích, nhưng thêm click ra ngoài
+document.getElementById('overlay').addEventListener('click', closeQR);
+
+// Ngăn click bên trong popup đóng (chỉ khi click ra ngoài mới đóng)
+document.getElementById('qrPopup').addEventListener('click', (e) => {
+    e.stopPropagation();
 });
 
 function closeQR() {
