@@ -1,83 +1,79 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bảng Xếp Hạng Bình Chọn</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-    <style>
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            text-align: center; 
-            margin: 20px; 
-            background-color: hsl(26.67deg 69.23% 20.39%); 
-            color: hsl(40.75deg 72.6% 71.37%); 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        *{ outline: none !important; caret-color: transparent; }
-        .leader { font-weight: bold; font-size: 22px; margin-bottom: 15px; }
-        .chart-container { width: 800px; margin-bottom: 150px; display: none; }
-        canvas { width: 100% !important; height: 400px !important; color: white; }
-        h3 { font-size: 30px; font-weight: 700; margin-bottom: 10px; }
-        button { padding: 12px 25px; background: #a69480; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 5px;font-weight: bold;}
-        button:hover { background: #c18836; }
-        #qrPopup {
-            display: none;
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: #6a3b1b;
-            border: 2px solid #a69480;
-            padding: 20px;
-            z-index: 999;
-            border-radius: 10px;
-        }
-        #overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 998;
-        }
-        #tabButtons { margin-bottom: 20px; margin-top: 20px;}
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bảng Xếp Hạng Bình Chọn</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<style>
+    body { 
+        font-family: 'Segoe UI', sans-serif; 
+        text-align: center; 
+        margin: 20px; 
+        background-color: hsl(26.67deg 69.23% 20.39%); 
+        color: hsl(40.75deg 72.6% 71.37%); 
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    *{ outline: none !important; caret-color: transparent; }
+    .leader { font-weight: bold; font-size: 22px; margin-bottom: 15px; }
+    .chart-container { width: 800px; margin-bottom: 150px; display: none; }
+    canvas { width: 100% !important; height: 400px !important; color: white; }
+    h3 { font-size: 30px; font-weight: 700; margin-bottom: 10px; }
+    button { padding: 12px 25px; background: #a69480; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 5px; font-weight: bold;}
+    button:hover { background: #c18836; }
+    #qrPopup {
+        display: none;
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        background: #6a3b1b;
+        border: 2px solid #a69480;
+        padding: 20px;
+        z-index: 999;
+        border-radius: 10px;
+    }
+    #overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 998;
+    }
+    #tabButtons { margin-bottom: 20px; margin-top: 20px;}
+</style>
 </head>
 <body>
-    <img style="width: 300px;" src="./logo-masteri-lumiere.png"/>
-    <h2 style="font-size: 70px;">BẢNG XẾP HẠNG BÌNH CHỌN</h2>
-    <button id="voteBtn" style="font-weight: bold;">🗳️ BÌNH CHỌN NGAY</button>
+<img style="width: 300px;" src="./logo-masteri-lumiere.png"/>
+<h2 style="font-size: 70px;">BẢNG XẾP HẠNG BÌNH CHỌN</h2>
+<button id="voteBtn">🗳️ BÌNH CHỌN NGAY</button>
 
-    <!-- Nút tab 4 giải -->
-    <div id="tabButtons">
-        <button>🏆 TRÌNH DIỄN ẤN TƯỢNG NHẤT</button>
-        <button>🏆 TRANG PHỤC THU HÚT NHẤT</button>
-        <button>🏆 KHÁN GIẢ YÊU THÍCH NHẤT</button>
-        <button>🏆 TIẾT MỤC GIẢI TRÍ NHẤT</button>
-    </div>
+<!-- Nút tab 4 giải -->
+<div id="tabButtons">
+    <button>🏆 TRÌNH DIỄN ẤN TƯỢNG NHẤT</button>
+    <button>🏆 TRANG PHỤC THU HÚT NHẤT</button>
+    <button>🏆 KHÁN GIẢ YÊU THÍCH NHẤT</button>
+    <button>🏆 TIẾT MỤC GIẢI TRÍ NHẤT</button>
+</div>
 
-    <div id="charts"></div>
-
-    <div id="overlay"></div>
-    <div id="qrPopup">
-        <div id="qrcode"></div>
-    </div>
+<div id="charts"></div>
+<div id="overlay"></div>
+<div id="qrPopup"><div id="qrcode"></div></div>
 
 <script>
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSe3v0wzyiGRX4OpAsihI14EHTMVlruLmCMpIrOoTtZ3a_WRaWOnEJPtJjGIMDo4dIUnk0jcR6Q752V/pub?gid=519629553&single=true&output=csv";
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTpL1U04K8TuT9kZy4UQvQ0OD7wRtwgX6lFRkjXTMm267cNv6sWKO17A4ffp5bOlbMQax524o76C94o/pub?output=csv";
 const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdwkOPcgkNrNsiDR0icNtg8YCff_e3lyk-0AGY_zQzOIlveEg/viewform";
 
-const playerNames = ["Duy Kiên", "Tuấn Cường", "Thu Miền", "Giang Đào", "Đại Hùng", "Trọng Hiếu"];
+const playerNames = ["Duy Kiên", "Tuấn Cường", "Thu Miền", "Ngọc Giang", "Đại Hùng", "Trọng Hiếu"];
 const playerColors = ["#c18836"];
 const questions = ["TRÌNH DIỄN ẤN TƯỢNG NHẤT", "TRANG PHỤC THU HÚT NHẤT", "KHÁN GIẢ YÊU THÍCH NHẤT", "TIẾT MỤC GIẢI TRÍ NHẤT"];
 
 let charts = [];
 let questionHeaders = [];
-let lastRowCount = 0;
 let isFetching = false;
 
 // Tạo 4 bảng xếp hạng
@@ -105,131 +101,86 @@ questions.forEach((q, idx) => {
     const ctx = canvas.getContext('2d');
     const chart = new Chart(ctx, {
         type: 'bar',
-        data: {
-            labels: playerNames,
-            datasets: [{
-                label: 'Số phiếu',
-                data: Array(playerNames.length).fill(0),
-                backgroundColor: playerColors,
-                barThickness: 50,
-                maxBarThickness: 60
-            }]
-        },
-        options: {
-            responsive: true,
-            animation: { duration: 500, easing: 'easeOutQuart' },
-            plugins: { legend: { display: false }, tooltip: { bodyFont: { size: 16, weight: 'bold' }, titleFont: { size: 18, weight: 'bold' } } },
-            scales: {
-                y: { beginAtZero: true, ticks: { precision: 0, font: { size: 16, weight: 'bold' }, color: '#fff' } },
-                x: { ticks: { font: { size: 16, weight: 'bold' }, color: '#fff' }, categoryPercentage: 0.9, barPercentage: 1 }
-            }
-        }
+        data: { labels: playerNames, datasets: [{ label:'Số phiếu', data:Array(playerNames.length).fill(0), backgroundColor: playerColors, barThickness:50, maxBarThickness:60 }] },
+        options: { responsive:true, animation:{duration:400}, plugins:{legend:{display:false}, tooltip:{bodyFont:{size:16,weight:'bold'},titleFont:{size:18,weight:'bold'}}}, scales:{y:{beginAtZero:true,ticks:{precision:0,font:{size:16,weight:'bold'},color:'#fff'}}, x:{ticks:{font:{size:16,weight:'bold'},color:'#fff'},categoryPercentage:0.9,barPercentage:1}} }
     });
 
     charts.push({ chart, leaderDiv, questionIndex: idx });
 });
 
 // Animate chart
-function animateData(chart, newData) {
-    const current = chart.data.datasets[0].data.map(v => Number(v));
-    const steps = 20;
-    const stepData = newData.map((v, i) => (v - current[i]) / steps);
-    let count = 0;
-
-    const interval = setInterval(() => {
-        if (count >= steps) {
-            chart.data.datasets[0].data = newData;
-            chart.options.scales.y.suggestedMax = Math.max(...newData, 1) + 1;
-            chart.update();
-            clearInterval(interval);
-            return;
-        }
-        chart.data.datasets[0].data = chart.data.datasets[0].data.map((v, i) => v + stepData[i]);
-        chart.options.scales.y.suggestedMax = Math.max(...chart.data.datasets[0].data, 1) + 1;
+function animateData(chart, newData){
+    const current = chart.data.datasets[0].data.map(v=>Number(v));
+    const steps = 15;
+    const stepData = newData.map((v,i)=>(v-current[i])/steps);
+    let count=0;
+    const interval = setInterval(()=>{
+        if(count>=steps){ chart.data.datasets[0].data=newData; chart.options.scales.y.suggestedMax=Math.max(...newData,1)+1; chart.update(); clearInterval(interval); return; }
+        chart.data.datasets[0].data = chart.data.datasets[0].data.map((v,i)=>v+stepData[i]);
+        chart.options.scales.y.suggestedMax=Math.max(...chart.data.datasets[0].data,1)+1;
         chart.update();
         count++;
-    }, 25);
+    },20);
 }
 
-// Fetch CSV
-async function fetchAndUpdateCharts() {
-    if (isFetching) return;
-    isFetching = true;
-    try {
-        const response = await fetch(SHEET_URL + "&_ts=" + Date.now(), { cache: "no-store" });
-        if (!response.ok) throw new Error('Không thể truy cập dữ liệu.');
-
+// Fetch dữ liệu
+async function fetchAndUpdateCharts(){
+    if(isFetching) return;
+    isFetching=true;
+    try{
+        const response = await fetch(SHEET_URL+"&_ts="+Date.now(), {cache:"no-store"});
+        if(!response.ok) throw new Error('Không thể truy cập dữ liệu.');
         const text = await response.text();
-        const result = Papa.parse(text, { header: true, skipEmptyLines: true });
+        const result = Papa.parse(text,{header:true,skipEmptyLines:true});
         const rows = result.data;
+        if(!rows.length){ isFetching=false; return; }
+        const allHeaders = Object.keys(rows[0]);
+        questionHeaders = [allHeaders[3],allHeaders[4],allHeaders[5],allHeaders[6]];
 
-        if (rows.length <= lastRowCount) { isFetching = false; return; } 
-        const newRows = rows.slice(lastRowCount);
-        lastRowCount = rows.length;
-
-        if (rows.length > 0) {
-            const allHeaders = Object.keys(rows[0]);
-            questionHeaders = [allHeaders[2], allHeaders[3], allHeaders[4], allHeaders[5]];
-        }
-
-        charts.forEach(({ chart, leaderDiv, questionIndex }) => {
+        charts.forEach(({chart, leaderDiv, questionIndex})=>{
             let counts = Array(playerNames.length).fill(0);
             const header = questionHeaders[questionIndex];
-            if (!header) return;
-
-            newRows.forEach(row => {
+            if(!header) return;
+            rows.forEach(row=>{
                 const answer = row[header]?.trim();
-                if (answer) {
-                    const playerIndex = playerNames.findIndex(p => p === answer);
-                    if (playerIndex !== -1) counts[playerIndex]++;
+                if(answer){
+                    const playerIndex = playerNames.findIndex(p=>p===answer);
+                    if(playerIndex!==-1) counts[playerIndex]++;
                 }
             });
-
-            const updatedData = chart.data.datasets[0].data.map((v, i) => v + counts[i]);
-            animateData(chart, updatedData);
-
-            let maxVotes = Math.max(...updatedData);
-            let leaders = updatedData.map((v, i) => v === maxVotes && v > 0 ? playerNames[i] : null).filter(v => v);
-            leaderDiv.innerText = maxVotes > 0 ? ` ` : "Chưa có bình chọn nào";
+            animateData(chart, counts);
+            let maxVotes = Math.max(...counts);
+            leaderDiv.innerText = maxVotes>0 ? ` ` : "Chưa có bình chọn nào";
         });
 
-    } catch (err) {
+    }catch(err){
         console.error(err);
-        charts.forEach(({ leaderDiv }) => leaderDiv.innerText = "Lỗi tải dữ liệu!");
+        charts.forEach(({leaderDiv})=>leaderDiv.innerText="Lỗi tải dữ liệu!");
     }
-    isFetching = false;
+    isFetching=false;
 }
 
 fetchAndUpdateCharts();
-setInterval(fetchAndUpdateCharts, 5000);
+setInterval(fetchAndUpdateCharts,5000);
 
-// Vote QR
-document.getElementById('voteBtn').addEventListener('click', () => {
-    document.getElementById('overlay').style.display = 'block';
-    const qrContainer = document.getElementById('qrcode');
-    qrContainer.innerHTML = '';
-    new QRCode(qrContainer, { text: FORM_URL, width: 600, height: 600 });
-    document.getElementById('qrPopup').style.display = 'block';
+// QR vote
+document.getElementById('voteBtn').addEventListener('click',()=>{
+    document.getElementById('overlay').style.display='block';
+    const qrContainer=document.getElementById('qrcode');
+    qrContainer.innerHTML='';
+    new QRCode(qrContainer,{text:FORM_URL,width:600,height:600});
+    document.getElementById('qrPopup').style.display='block';
 });
+document.getElementById('overlay').addEventListener('click',closeQR);
+document.getElementById('qrPopup').addEventListener('click',e=>e.stopPropagation());
+function closeQR(){document.getElementById('overlay').style.display='none';document.getElementById('qrPopup').style.display='none';}
 
-document.getElementById('overlay').addEventListener('click', closeQR);
-document.getElementById('qrPopup').addEventListener('click', (e) => e.stopPropagation());
-function closeQR(){
-    document.getElementById('overlay').style.display = 'none';
-    document.getElementById('qrPopup').style.display = 'none';
-}
-
-// Nút tab hiển thị toggle bảng xếp hạng
-document.querySelectorAll('#tabButtons button').forEach((btn, idx) => {
-    btn.addEventListener('click', () => {
+// Tab toggle bảng xếp hạng
+document.querySelectorAll('#tabButtons button').forEach((btn,idx)=>{
+    btn.addEventListener('click',()=>{
         const container = document.getElementById(`chart-container-${idx}`);
-        if(container.style.display === 'block'){
-            container.style.display = 'none'; // ẩn nếu click lần 2
-        } else {
-            charts.forEach((c, i) => {
-                document.getElementById(`chart-container-${i}`).style.display = i === idx ? 'block' : 'none';
-            });
-        }
+        if(container.style.display==='block'){ container.style.display='none'; }
+        else{ charts.forEach((c,i)=>document.getElementById(`chart-container-${i}`).style.display=i===idx?'block':'none'); }
     });
 });
 </script>
