@@ -20,10 +20,10 @@
         }
         *{ outline: none !important; caret-color: transparent; }
         .leader { font-weight: bold; font-size: 22px; margin-bottom: 15px; }
-        .chart-container { width: 800px; margin-bottom: 150px; }
+        .chart-container { width: 800px; margin-bottom: 150px; display: none; }
         canvas { width: 100% !important; height: 400px !important; color: white; }
         h3 { font-size: 30px; font-weight: 700; margin-bottom: 10px; }
-        button { padding: 12px 25px; background: #a69480; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button { padding: 12px 25px; background: #a69480; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 5px;}
         button:hover { background: #c18836; }
         #qrPopup {
             display: none;
@@ -36,7 +36,6 @@
             z-index: 999;
             border-radius: 10px;
         }
-        #qrPopup button { margin-top: 10px; }
         #overlay {
             display: none;
             position: fixed;
@@ -45,19 +44,27 @@
             background: rgba(0,0,0,0.5);
             z-index: 998;
         }
+        #tabButtons { margin-bottom: 20px; }
     </style>
 </head>
 <body>
     <img style="width: 300px;" src="./logo-masteri-lumiere.png"/>
-    <h2>BẢNG XẾP HẠNG BÌNH CHỌN</h2>
+    <h2 style="font-size: 70px;">BẢNG XẾP HẠNG BÌNH CHỌN</h2>
     <button id="voteBtn" style="font-weight: bold;">🗳️ Bình Chọn Ngay</button>
+
+    <!-- Nút tab 4 giải -->
+    <div id="tabButtons">
+        <button>🏆 TRÌNH DIỄN ẤN TƯỢNG NHẤT</button>
+        <button>🏆 TRANG PHỤC THU HÚT NHẤT</button>
+        <button>🏆 KHÁN GIẢ YÊU THÍCH NHẤT</button>
+        <button>🏆 TIẾT MỤC GIẢI TRÍ NHẤT</button>
+    </div>
 
     <div id="charts"></div>
 
     <div id="overlay"></div>
     <div id="qrPopup">
         <div id="qrcode"></div>
-        <!--<button onclick="closeQR()"></button>-->
     </div>
 
 <script>
@@ -66,17 +73,18 @@ const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdwkOPcgkNrNsiDR0icNt
 
 const playerNames = ["Duy Kiên", "Tuấn Cường", "Thu Miền", "Giang Đào", "Đại Hùng", "Trọng Hiếu"];
 const playerColors = ["#c18836"];
-const questionsname = ["Giải Thưởng :"]
-const questions = ["Giải Thưởng : 🏆TRÌNH DIỄN ẤN TƯỢNG NHẤT🏆", "Giải Thưởng : 🏆TRANG PHỤC THU HÚT NHẤT🏆", "Giải Thưởng : 🏆KHÁN GIẢ YÊU THÍCH NHẤT🏆", "Giải Thưởng : 🏆TIẾT MỤC GIẢI TRÍ NHẤT🏆"];
+const questions = ["TRÌNH DIỄN ẤN TƯỢNG NHẤT", "TRANG PHỤC THU HÚT NHẤT", "KHÁN GIẢ YÊU THÍCH NHẤT", "TIẾT MỤC GIẢI TRÍ NHẤT"];
 
 let charts = [];
 let questionHeaders = [];
 let lastRowCount = 0;
 let isFetching = false;
 
+// Tạo 4 bảng xếp hạng
 questions.forEach((q, idx) => {
     const container = document.createElement('div');
     container.classList.add('chart-container');
+    container.id = `chart-container-${idx}`;
 
     const title = document.createElement('h3');
     title.innerText = q;
@@ -121,6 +129,7 @@ questions.forEach((q, idx) => {
     charts.push({ chart, leaderDiv, questionIndex: idx });
 });
 
+// Animate chart
 function animateData(chart, newData) {
     const current = chart.data.datasets[0].data.map(v => Number(v));
     const steps = 20;
@@ -142,6 +151,7 @@ function animateData(chart, newData) {
     }, 25);
 }
 
+// Fetch CSV
 async function fetchAndUpdateCharts() {
     if (isFetching) return;
     isFetching = true;
@@ -153,9 +163,8 @@ async function fetchAndUpdateCharts() {
         const result = Papa.parse(text, { header: true, skipEmptyLines: true });
         const rows = result.data;
 
-        if (rows.length <= lastRowCount) { isFetching = false; return; } // Chỉ load khi có dữ liệu mới
-
-        const newRows = rows.slice(lastRowCount); // Lấy các dòng mới
+        if (rows.length <= lastRowCount) { isFetching = false; return; } 
+        const newRows = rows.slice(lastRowCount);
         lastRowCount = rows.length;
 
         if (rows.length > 0) {
@@ -181,8 +190,7 @@ async function fetchAndUpdateCharts() {
 
             let maxVotes = Math.max(...updatedData);
             let leaders = updatedData.map((v, i) => v === maxVotes && v > 0 ? playerNames[i] : null).filter(v => v);
-            //leaderDiv.innerText = maxVotes > 0 ? `🏆 Dẫn đầu: ${leaders.join(", ")} (${maxVotes} phiếu)` : "Chưa có bình chọn nào";
-             leaderDiv.innerText = maxVotes > 0 ? ` ` : "Chưa có bình chọn nào";
+            leaderDiv.innerText = maxVotes > 0 ? ` ` : "Chưa có bình chọn nào";
         });
 
     } catch (err) {
@@ -195,6 +203,7 @@ async function fetchAndUpdateCharts() {
 fetchAndUpdateCharts();
 setInterval(fetchAndUpdateCharts, 5000);
 
+// Vote QR
 document.getElementById('voteBtn').addEventListener('click', () => {
     document.getElementById('overlay').style.display = 'block';
     const qrContainer = document.getElementById('qrcode');
@@ -203,18 +212,26 @@ document.getElementById('voteBtn').addEventListener('click', () => {
     document.getElementById('qrPopup').style.display = 'block';
 });
 
-// Xóa nút "Đóng" hoặc giữ tùy thích, nhưng thêm click ra ngoài
 document.getElementById('overlay').addEventListener('click', closeQR);
-
-// Ngăn click bên trong popup đóng (chỉ khi click ra ngoài mới đóng)
-document.getElementById('qrPopup').addEventListener('click', (e) => {
-    e.stopPropagation();
-});
-
-function closeQR() {
+document.getElementById('qrPopup').addEventListener('click', (e) => e.stopPropagation());
+function closeQR(){
     document.getElementById('overlay').style.display = 'none';
     document.getElementById('qrPopup').style.display = 'none';
 }
+
+// Nút tab hiển thị toggle bảng xếp hạng
+document.querySelectorAll('#tabButtons button').forEach((btn, idx) => {
+    btn.addEventListener('click', () => {
+        const container = document.getElementById(`chart-container-${idx}`);
+        if(container.style.display === 'block'){
+            container.style.display = 'none'; // ẩn nếu click lần 2
+        } else {
+            charts.forEach((c, i) => {
+                document.getElementById(`chart-container-${i}`).style.display = i === idx ? 'block' : 'none';
+            });
+        }
+    });
+});
 </script>
 </body>
 </html>
