@@ -160,7 +160,7 @@ async function fetchAndUpdateCharts() {
 
         if (rows.length > 0) {
             const allHeaders = Object.keys(rows[0]);
-            questionHeaders = [allHeaders[3], allHeaders[4], allHeaders[5], allHeaders[6]];
+            questionHeaders = [allHeaders[2], allHeaders[3], allHeaders[4], allHeaders[5]];
         }
 
         charts.forEach(({ chart, leaderDiv, questionIndex }) => {
